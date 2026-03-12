@@ -11,6 +11,5 @@ if (!defined('ABSPATH')) exit;
 define('ELEGANT_TOOLKIT_PATH', plugin_dir_path(__FILE__));
 define('ELEGANT_TOOLKIT_URL', plugin_dir_url(__FILE__));
 
-// 加载模块
 require_once ELEGANT_TOOLKIT_PATH . 'includes/class-mindmap-renderer.php';
 require_once ELEGANT_TOOLKIT_PATH . 'includes/class-tabs-block.php';

@@ -8,8 +8,9 @@ wp.domReady(function() {
 
     // 子区块：elegant/tab
     wp.blocks.registerBlockType('elegant/tab', {
-        title: '单个标签页',
+        title: '标签页项目',
         icon: 'welcome-add-page',
+        parent: ['elegant/tabs'],
         attributes: { title: { type: 'string', default: '新标签页' } },
         edit: function(props) {
             return el('div', { 
@@ -30,11 +31,30 @@ wp.domReady(function() {
     // 父区块：elegant/tabs
     wp.blocks.registerBlockType('elegant/tabs', {
         title: '标签页组',
+        description: '创建一个美观、响应式的标签页容器，用于分类展示内容。',
         icon: 'index-card',
         category: 'design',
         keywords: ['tabs', '选项卡', '标签'],
+        
+        // 【核心加回】区块预览示例 (Inserter Preview)
+        example: {
+            innerBlocks: [
+                {
+                    name: 'elegant/tab',
+                    attributes: { title: '预览标签 1' },
+                    innerBlocks: [ { name: 'core/paragraph', attributes: { content: '在这里输入内容...' } } ]
+                },
+                {
+                    name: 'elegant/tab',
+                    attributes: { title: '预览标签 2' }
+                }
+            ]
+        },
+
         edit: function(props) {
             var clientId = props.clientId;
+            
+            // 使用 ES5 方式处理 Hook
             var state = wp.element.useState(0);
             var activeIndex = state[0];
             var setActiveIndex = state[1];
@@ -45,14 +65,14 @@ wp.domReady(function() {
 
             var onAddTab = function() {
                 var newBlock = wp.blocks.createBlock('elegant/tab', { 
-                    title: '选项卡 ' + ((innerBlocks ? innerBlocks.length : 0) + 1) 
+                    title: '新标签页 ' + ((innerBlocks ? innerBlocks.length : 0) + 1) 
                 });
                 wp.data.dispatch('core/block-editor').insertBlocks(newBlock, innerBlocks.length, clientId);
                 setActiveIndex(innerBlocks.length);
             };
 
             return el('div', { className: 'et-editor-tabs-wrap' },
-                el('div', { style: { display: 'flex', alignItems: 'center', background: '#f8f9fb', border: '1px solid #eee', borderBottom: 'none' } },
+                el('div', { className: 'et-nav', style: { display: 'flex', alignItems: 'center', background: '#f8f9fb', border: '1px solid #eee', borderBottom: 'none' } },
                     (innerBlocks || []).map(function(block, index) {
                         var isActive = activeIndex === index;
                         return el('div', {
@@ -68,10 +88,10 @@ wp.domReady(function() {
                     }),
                     el('div', { onClick: onAddTab, style: { padding: '0 15px', cursor: 'pointer', color: '#2196f3', fontSize: '20px' } }, '+')
                 ),
-                el('div', { style: { border: '1px solid #eee', padding: '15px', background: '#fff' } },
+                el('div', { className: 'et-content', style: { border: '1px solid #eee', padding: '15px', background: '#fff' } },
                     el('style', null, 
                         '.et-editor-tabs-wrap .block-editor-block-list__layout > div.wp-block:not(:nth-child(' + (activeIndex + 1) + ')) { display: none !important; }' +
-                        '.et-editor-tabs-outer .block-editor-block-list__layout > .block-list-appender { display: block !important; margin-top: 15px; }'
+                        '.et-editor-tabs-wrap .block-editor-block-list__layout > .block-list-appender { display: block !important; margin-top: 15px; }'
                     ),
                     el(InnerBlocks, { 
                         allowedBlocks: ['elegant/tab'],
