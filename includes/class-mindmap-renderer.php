@@ -6,9 +6,44 @@ class Elegant_Mindmap_Renderer {
     
     public function __construct() {
         add_shortcode('svg_mindmap', array($this, 'render_shortcode'));
+        add_action('init', array($this, 'register_block'));
+        add_action('enqueue_block_editor_assets', array($this, 'enqueue_editor_assets'));
+    }
+
+    public function register_block() {
+        register_block_type('elegant/mindmap', array(
+            'title'           => '思维导图区块',
+            'description'     => '通过内置列表编辑内容并自动渲染为 SVG 思维导图。',
+            'render_callback' => array($this, 'render_block'),
+        ));
+    }
+
+    public function enqueue_editor_assets() {
+        wp_enqueue_script(
+            'elegant-mindmap-editor',
+            ELEGANT_TOOLKIT_URL . 'assets/mindmap-editor.js',
+            array('wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-dom-ready'),
+            '1.0.0',
+            true
+        );
     }
 
     public function render_shortcode($atts, $content = null) {
+        return $this->render_mindmap($content);
+    }
+
+    public function render_block($attributes, $content, $block = null) {
+        if ($block instanceof WP_Block && !empty($block->parsed_block['innerBlocks'])) {
+            $content = '';
+            foreach ($block->parsed_block['innerBlocks'] as $inner_block) {
+                $content .= render_block($inner_block);
+            }
+        }
+
+        return $this->render_mindmap($content);
+    }
+
+    private function render_mindmap($content) {
         $content = preg_replace('/<!--(.|\s)*?-->/', '', $content);
         $data = $this->parse_wp_list_to_array($content);
         

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SDUcraft Utils
  * Description: 一些小组件的集合
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: Billadom
  */
 
