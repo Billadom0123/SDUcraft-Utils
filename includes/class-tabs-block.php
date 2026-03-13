@@ -21,7 +21,7 @@ class Elegant_Tabs_Block {
 
         register_block_type('elegant/tabs', array(
             'title'           => '标签页组',
-            'description'     => '将内容拆分成可切换的多个标签页，适合 FAQ、参数说明和步骤内容展示。',
+            'description'     => '拥有可切换的多个标签页',
             'render_callback' => array($this, 'render_callback'),
         ));
     }

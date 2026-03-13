@@ -33,7 +33,7 @@ wp.domReady(function() {
         title: '标签页组',
         icon: 'index-card',
         category: 'design',
-        description: '将内容拆分成可切换的多个标签页，适合 FAQ、参数说明和步骤内容展示。',
+        description: '拥有可切换的多个标签页。',
         keywords: ['tabs', '选项卡', '标签'],
         example: {
             innerBlocks: [
@@ -43,7 +43,7 @@ wp.domReady(function() {
                     innerBlocks: [
                         {
                             name: 'core/paragraph',
-                            attributes: { content: '这是第一个标签页内容示例。' }
+                            attributes: { content: '第一个标签页。' }
                         }
                     ]
                 },
@@ -276,7 +276,7 @@ wp.domReady(function() {
                                         onStartDragTab(index, event);
                                     },
                                     style: {
-                                        fontSize: '12px',
+                                        fontSize: '20px',
                                         opacity: 0.55,
                                         cursor: draggingIndex === index ? 'grabbing' : 'grab'
                                     },
