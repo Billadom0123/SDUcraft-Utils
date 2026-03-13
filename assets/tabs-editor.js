@@ -10,6 +10,7 @@ wp.domReady(function() {
     wp.blocks.registerBlockType('elegant/tab', {
         title: '单个标签页',
         icon: 'welcome-add-page',
+        description: '标签页组中的单个内容面板。',
         attributes: { title: { type: 'string', default: '新标签页' } },
         edit: function(props) {
             return el('div', { 
@@ -32,9 +33,35 @@ wp.domReady(function() {
         title: '标签页组',
         icon: 'index-card',
         category: 'design',
+        description: '将内容拆分成可切换的多个标签页，适合 FAQ、参数说明和步骤内容展示。',
         keywords: ['tabs', '选项卡', '标签'],
+        example: {
+            innerBlocks: [
+                {
+                    name: 'elegant/tab',
+                    attributes: { title: '功能说明' },
+                    innerBlocks: [
+                        {
+                            name: 'core/paragraph',
+                            attributes: { content: '这是第一个标签页内容示例。' }
+                        }
+                    ]
+                },
+                {
+                    name: 'elegant/tab',
+                    attributes: { title: '使用方法' },
+                    innerBlocks: [
+                        {
+                            name: 'core/paragraph',
+                            attributes: { content: '点击标签即可切换对应内容。' }
+                        }
+                    ]
+                }
+            ]
+        },
         edit: function(props) {
             var clientId = props.clientId;
+            var safeClientClass = 'et-editor-tabs-' + clientId.replace(/[^a-zA-Z0-9_-]/g, '');
             var state = wp.element.useState(0);
             var activeIndex = state[0];
             var setActiveIndex = state[1];
@@ -51,14 +78,27 @@ wp.domReady(function() {
                 setActiveIndex(innerBlocks.length);
             };
 
-            return el('div', { className: 'et-editor-tabs-wrap' },
-                el('div', { style: { display: 'flex', alignItems: 'center', background: '#f8f9fb', border: '1px solid #eee', borderBottom: 'none' } },
+            return el('div', { className: 'et-editor-tabs-wrap ' + safeClientClass },
+                el('div', {
+                    style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        background: '#f8f9fb',
+                        border: '1px solid #eee',
+                        borderBottom: 'none',
+                        overflowX: 'auto',
+                        overflowY: 'hidden',
+                        whiteSpace: 'nowrap',
+                        scrollbarWidth: 'thin'
+                    }
+                },
                     (innerBlocks || []).map(function(block, index) {
                         var isActive = activeIndex === index;
                         return el('div', {
                             key: block.clientId,
                             onClick: function() { setActiveIndex(index); },
                             style: {
+                                flex: '0 0 auto',
                                 padding: '12px 18px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold',
                                 color: isActive ? '#2196f3' : '#777',
                                 background: isActive ? '#fff' : 'transparent',
@@ -66,12 +106,21 @@ wp.domReady(function() {
                             }
                         }, block.attributes.title || '标签');
                     }),
-                    el('div', { onClick: onAddTab, style: { padding: '0 15px', cursor: 'pointer', color: '#2196f3', fontSize: '20px' } }, '+')
+                    el('div', {
+                        onClick: onAddTab,
+                        style: {
+                            flex: '0 0 auto',
+                            padding: '0 15px',
+                            cursor: 'pointer',
+                            color: '#2196f3',
+                            fontSize: '20px'
+                        }
+                    }, '+')
                 ),
-                el('div', { style: { border: '1px solid #eee', padding: '15px', background: '#fff' } },
+                el('div', { className: 'et-editor-tabs-content', style: { border: '1px solid #eee', padding: '15px', background: '#fff' } },
                     el('style', null, 
-                        '.et-editor-tabs-wrap .block-editor-block-list__layout > div.wp-block:not(:nth-child(' + (activeIndex + 1) + ')) { display: none !important; }' +
-                        '.et-editor-tabs-outer .block-editor-block-list__layout > .block-list-appender { display: block !important; margin-top: 15px; }'
+                        '.' + safeClientClass + ' > .et-editor-tabs-content > .block-editor-inner-blocks > .block-editor-block-list__layout > [data-type="elegant/tab"]:not(:nth-child(' + (activeIndex + 1) + ')) { display: none !important; }' +
+                        '.' + safeClientClass + ' > .et-editor-tabs-content > .block-editor-inner-blocks > .block-editor-block-list__layout > .block-list-appender { display: block !important; margin-top: 15px; }'
                     ),
                     el(InnerBlocks, { 
                         allowedBlocks: ['elegant/tab'],

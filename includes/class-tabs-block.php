@@ -12,6 +12,7 @@ class Elegant_Tabs_Block {
     public function register_blocks() {
         register_block_type('elegant/tab', array(
             'title'      => '标签页项目',
+            'description'=> '标签页组中的单个内容面板。',
             'parent'     => array('elegant/tabs'),
             'attributes' => array(
                 'title' => array('type' => 'string', 'default' => '新标签页')
@@ -20,6 +21,7 @@ class Elegant_Tabs_Block {
 
         register_block_type('elegant/tabs', array(
             'title'           => '标签页组',
+            'description'     => '将内容拆分成可切换的多个标签页，适合 FAQ、参数说明和步骤内容展示。',
             'render_callback' => array($this, 'render_callback'),
         ));
     }
@@ -29,62 +31,95 @@ class Elegant_Tabs_Block {
             'elegant-tabs-editor',
             ELEGANT_TOOLKIT_URL . 'assets/tabs-editor.js',
             array('wp-blocks', 'wp-element', 'wp-data', 'wp-editor', 'wp-components', 'wp-dom-ready', 'wp-block-editor'),
-            '1.0.1',
+            '1.0.4',
             true
         );
     }
 
-    public function render_callback($attributes, $content) {
-        $blocks = parse_blocks($content);
+    public function enqueue_frontend_assets() {
+        wp_enqueue_style(
+            'elegant-tabs-frontend-style',
+            ELEGANT_TOOLKIT_URL . 'assets/tabs-frontend.css',
+            array(),
+            '1.0.0'
+        );
+
+        wp_enqueue_script(
+            'elegant-tabs-frontend',
+            ELEGANT_TOOLKIT_URL . 'assets/tabs-frontend.js',
+            array(),
+            '1.0.2',
+            true
+        );
+    }
+
+    public function render_callback($attributes, $content, $block = null) {
+        $blocks = array();
+
+        // Prefer parsed innerBlocks from the current dynamic block instance.
+        if ($block instanceof WP_Block && !empty($block->parsed_block['innerBlocks']) && is_array($block->parsed_block['innerBlocks'])) {
+            $blocks = $block->parsed_block['innerBlocks'];
+        } elseif (!empty($content)) {
+            $blocks = parse_blocks($content);
+        }
+
         $tabs = [];
-        foreach ($blocks as $block) {
-            if ($block['blockName'] === 'elegant/tab') {
+        foreach ($blocks as $inner_block) {
+            if (!empty($inner_block['blockName']) && $inner_block['blockName'] === 'elegant/tab') {
                 $tabs[] = [
-                    'title'   => isset($block['attrs']['title']) ? $block['attrs']['title'] : '新标签页',
-                    'content' => render_block($block)
+                    'title'   => isset($inner_block['attrs']['title']) ? $inner_block['attrs']['title'] : '新标签页',
+                    'content' => render_block($inner_block)
                 ];
             }
         }
+
+        // Fallback: if parsing fails, still render content as a single pane.
+        if (empty($tabs) && !empty(trim($content))) {
+            $tabs[] = [
+                'title'   => '内容',
+                'content' => $content,
+            ];
+        }
+
         if (empty($tabs)) return '';
+
+        $this->enqueue_frontend_assets();
 
         $tabs_id = 'tabs-' . uniqid();
         ob_start();
         ?>
-        <style>
-            .elegant-tabs { margin: 30px 0; border-radius: 12px; overflow: hidden; background: #fff !important; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #eee !important; font-family: sans-serif; }
-            .elegant-tabs-header { display: flex; background: #f8f9fb !important; border-bottom: 1px solid #eee !important; padding: 0 10px; overflow-x: auto; scrollbar-width: none; }
-            .elegant-tab-trigger { padding: 16px 24px; cursor: pointer; font-size: 14px; font-weight: 600; color: #666 !important; white-space: nowrap; position: relative; transition: 0.3s; }
-            .elegant-tab-trigger.active { color: #2196f3 !important; }
-            .elegant-tab-trigger.active::after { content: ""; position: absolute; bottom: 0; left: 20%; width: 60%; height: 3px; background: #2196f3 !important; }
-            .elegant-tabs-content { padding: 24px; background: #fff !important; min-height: 100px; }
-            .elegant-tab-pane { display: none; }
-            .elegant-tab-pane.active { display: block; animation: tabFadeIn 0.3s ease; }
-            @keyframes tabFadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
-            body.wp-dark-mode-active .elegant-tabs, body.dark .elegant-tabs { background: #1e1e1e !important; border-color: #333 !important; color: #eee !important; }
-            body.wp-dark-mode-active .elegant-tabs-header, body.dark .elegant-tabs-header { background: #252525 !important; border-color: #333 !important; }
-            body.wp-dark-mode-active .elegant-tabs-content, body.dark .elegant-tabs-content { background: #1e1e1e !important; }
-        </style>
-        <div class="elegant-tabs" id="<?php echo $tabs_id; ?>">
-            <div class="elegant-tabs-header">
-                <?php foreach ($tabs as $i => $t): ?>
-                    <div class="elegant-tab-trigger <?php echo $i===0?'active':''; ?>" role="button" onclick="elegantSwitchTab(this, '<?php echo $tabs_id; ?>-p-<?php echo $i; ?>')"><?php echo esc_html($t['title']); ?></div>
+        <div class="elegant-tabs" id="<?php echo esc_attr($tabs_id); ?>">
+            <div class="elegant-tabs-header" role="tablist" aria-label="Elegant Tabs">
+                <?php foreach ($tabs as $i => $t):
+                    $trigger_id = $tabs_id . '-t-' . $i;
+                    $panel_id = $tabs_id . '-p-' . $i;
+                ?>
+                    <div
+                        class="elegant-tab-trigger <?php echo $i===0?'active':''; ?>"
+                        id="<?php echo esc_attr($trigger_id); ?>"
+                        role="tab"
+                        tabindex="<?php echo $i===0?'0':'-1'; ?>"
+                        aria-selected="<?php echo $i===0?'true':'false'; ?>"
+                        aria-controls="<?php echo esc_attr($panel_id); ?>"
+                        data-tab-target="<?php echo esc_attr($panel_id); ?>"
+                    ><?php echo esc_html($t['title']); ?></div>
                 <?php endforeach; ?>
             </div>
             <div class="elegant-tabs-content">
-                <?php foreach ($tabs as $i => $t): ?>
-                    <div class="elegant-tab-pane <?php echo $i===0?'active':''; ?>" id="<?php echo $tabs_id; ?>-p-<?php echo $i; ?>"><?php echo $t['content']; ?></div>
+                <?php foreach ($tabs as $i => $t):
+                    $trigger_id = $tabs_id . '-t-' . $i;
+                    $panel_id = $tabs_id . '-p-' . $i;
+                ?>
+                    <div
+                        class="elegant-tab-pane <?php echo $i===0?'active':''; ?>"
+                        id="<?php echo esc_attr($panel_id); ?>"
+                        role="tabpanel"
+                        aria-labelledby="<?php echo esc_attr($trigger_id); ?>"
+                        <?php echo $i===0?'':'hidden'; ?>
+                    ><?php echo $t['content']; ?></div>
                 <?php endforeach; ?>
             </div>
         </div>
-        <script>
-            window.elegantSwitchTab = window.elegantSwitchTab || function(el, id) {
-                const c = el.closest('.elegant-tabs');
-                c.querySelectorAll('.elegant-tab-trigger').forEach(b => b.classList.remove('active'));
-                el.classList.add('active');
-                c.querySelectorAll('.elegant-tab-pane').forEach(p => p.classList.remove('active'));
-                c.querySelector('#' + id).classList.add('active');
-            }
-        </script>
         <?php
         return ob_get_clean();
     }
