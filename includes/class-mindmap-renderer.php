@@ -7,6 +7,7 @@ class Elegant_Mindmap_Renderer {
     public function __construct() {
         add_shortcode('svg_mindmap', array($this, 'render_shortcode'));
         add_action('init', array($this, 'register_block'));
+        add_action('rest_api_init', array($this, 'register_rest_routes'));
         add_action('enqueue_block_editor_assets', array($this, 'enqueue_editor_assets'));
     }
 
@@ -22,10 +23,35 @@ class Elegant_Mindmap_Renderer {
         wp_enqueue_script(
             'elegant-mindmap-editor',
             ELEGANT_TOOLKIT_URL . 'assets/mindmap-editor.js',
-            array('wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-dom-ready'),
-            '1.0.0',
+            array('wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-dom-ready', 'wp-api-fetch'),
+            '1.0.1',
             true
         );
+    }
+
+    public function register_rest_routes() {
+        register_rest_route('elegant-toolkit/v1', '/mindmap-preview', array(
+            'methods'             => WP_REST_Server::CREATABLE,
+            'callback'            => array($this, 'render_preview_rest'),
+            'permission_callback' => function() {
+                return current_user_can('edit_posts');
+            },
+            'args'                => array(
+                'content' => array(
+                    'type'     => 'string',
+                    'required' => false,
+                ),
+            ),
+        ));
+    }
+
+    public function render_preview_rest($request) {
+        $content = (string) $request->get_param('content');
+        $html = $this->render_mindmap($content);
+
+        return rest_ensure_response(array(
+            'html' => $html,
+        ));
     }
 
     public function render_shortcode($atts, $content = null) {

@@ -4,6 +4,8 @@
 wp.domReady(function() {
     var el = wp.element.createElement;
     var InnerBlocks = wp.blockEditor.InnerBlocks;
+    var useSelect = wp.data.useSelect;
+    var apiFetch = wp.apiFetch;
 
     wp.blocks.registerBlockType('elegant/mindmap', {
         title: '思维导图区块',
@@ -21,7 +23,48 @@ wp.domReady(function() {
                 }
             ]
         },
-        edit: function() {
+        edit: function(props) {
+            var previewVisibleState = wp.element.useState(false);
+            var isPreviewVisible = previewVisibleState[0];
+            var setPreviewVisible = previewVisibleState[1];
+            var previewLoadingState = wp.element.useState(false);
+            var isPreviewLoading = previewLoadingState[0];
+            var setPreviewLoading = previewLoadingState[1];
+            var previewHtmlState = wp.element.useState('');
+            var previewHtml = previewHtmlState[0];
+            var setPreviewHtml = previewHtmlState[1];
+            var previewErrorState = wp.element.useState('');
+            var previewError = previewErrorState[0];
+            var setPreviewError = previewErrorState[1];
+
+            var innerBlocks = useSelect(function(select) {
+                return select('core/block-editor').getBlocks(props.clientId);
+            }, [props.clientId]);
+
+            var onPreview = function() {
+                var serialized = wp.blocks.serialize(innerBlocks || []);
+                setPreviewVisible(true);
+                setPreviewLoading(true);
+                setPreviewError('');
+
+                apiFetch({
+                    path: '/elegant-toolkit/v1/mindmap-preview',
+                    method: 'POST',
+                    data: { content: serialized }
+                }).then(function(response) {
+                    var html = response && response.html ? response.html : '';
+                    setPreviewHtml(html);
+                    if (!html) {
+                        setPreviewError('当前内容还不能生成导图，请先完善列表层级。');
+                    }
+                }).catch(function() {
+                    setPreviewError('预览生成失败，请稍后重试。');
+                    setPreviewHtml('');
+                }).finally(function() {
+                    setPreviewLoading(false);
+                });
+            };
+
             return el('div', {
                 className: 'elegant-mindmap-editor-wrap',
                 style: {
@@ -36,9 +79,42 @@ wp.domReady(function() {
                         borderBottom: '1px solid #eef1f4',
                         fontSize: '12px',
                         color: '#5c6773',
-                        background: '#fafbfc'
+                        background: '#fafbfc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px'
                     }
-                }, '在下面编辑列表层级，前台会自动渲染成思维导图。'),
+                },
+                    el('span', null, '在下面编辑列表层级，前台会自动渲染成思维导图。'),
+                    el('div', { style: { display: 'inline-flex', gap: '8px' } },
+                        el('button', {
+                            type: 'button',
+                            onClick: onPreview,
+                            disabled: isPreviewLoading,
+                            style: {
+                                border: '1px solid #ccd0d4',
+                                background: '#fff',
+                                borderRadius: '4px',
+                                padding: '4px 10px',
+                                fontSize: '12px',
+                                cursor: isPreviewLoading ? 'not-allowed' : 'pointer'
+                            }
+                        }, isPreviewLoading ? '生成中...' : (isPreviewVisible ? '刷新预览' : '预览导图')),
+                        isPreviewVisible ? el('button', {
+                            type: 'button',
+                            onClick: function() { setPreviewVisible(false); },
+                            style: {
+                                border: '1px solid #ccd0d4',
+                                background: '#fff',
+                                borderRadius: '4px',
+                                padding: '4px 10px',
+                                fontSize: '12px',
+                                cursor: 'pointer'
+                            }
+                        }, '关闭预览') : null
+                    )
+                ),
                 el('div', { style: { padding: '12px' } },
                     el(InnerBlocks, {
                         allowedBlocks: ['core/list'],
@@ -50,7 +126,37 @@ wp.domReady(function() {
                         templateLock: false,
                         renderAppender: InnerBlocks.ButtonBlockAppender
                     })
-                )
+                ),
+                isPreviewVisible ? el('div', {
+                    style: {
+                        borderTop: '1px solid #eef1f4',
+                        padding: '12px',
+                        background: '#fcfdff'
+                    }
+                },
+                    el('div', {
+                        style: {
+                            fontSize: '12px',
+                            color: '#5c6773',
+                            marginBottom: '8px'
+                        }
+                    }, '导图预览'),
+                    previewError ? el('div', {
+                        style: {
+                            color: '#b32d2e',
+                            fontSize: '12px',
+                            marginBottom: '8px'
+                        }
+                    }, previewError) : null,
+                    previewHtml ? el('div', {
+                        dangerouslySetInnerHTML: { __html: previewHtml }
+                    }) : (!isPreviewLoading ? el('div', {
+                        style: {
+                            color: '#7a8695',
+                            fontSize: '12px'
+                        }
+                    }, '暂无可预览内容。') : null)
+                ) : null
             );
         },
         save: function() {
