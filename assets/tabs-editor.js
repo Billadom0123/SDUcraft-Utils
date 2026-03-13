@@ -328,7 +328,7 @@ wp.domReady(function() {
                     el(InnerBlocks, { 
                         allowedBlocks: ['elegant/tab'],
                         template: [['elegant/tab', {title:'选项卡 1'}], ['elegant/tab', {title:'选项卡 2'}]],
-                        renderAppender: false
+                            renderAppender: InnerBlocks.DefaultBlockAppender
                     })
                 )
             );
