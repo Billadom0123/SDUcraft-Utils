@@ -2,7 +2,7 @@
 /**
  * Plugin Name: SDUcraft Utils
  * Description: 一些小组件的集合
- * Version: 1.1.0
+ * Version: 1.1.5
  * Author: Billadom
  */
 
@@ -15,3 +15,4 @@ define('ELEGANT_TOOLKIT_URL', plugin_dir_url(__FILE__));
 require_once ELEGANT_TOOLKIT_PATH . 'includes/class-mindmap-renderer.php';
 require_once ELEGANT_TOOLKIT_PATH . 'includes/class-tabs-block.php';
 require_once ELEGANT_TOOLKIT_PATH . 'includes/class-game-meta-block.php';
+require_once ELEGANT_TOOLKIT_PATH . 'includes/class-query-marquee-block.php';
