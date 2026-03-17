@@ -15,6 +15,7 @@ class Elegant_Mindmap_Renderer {
         register_block_type('elegant/mindmap', array(
             'title'           => '思维导图区块',
             'description'     => '通过内置列表编辑内容并自动渲染为 SVG 思维导图。',
+            'category'        => 'sducraft-utils',
             'render_callback' => array($this, 'render_block'),
         ));
     }
@@ -24,7 +25,7 @@ class Elegant_Mindmap_Renderer {
             'elegant-mindmap-editor',
             ELEGANT_TOOLKIT_URL . 'assets/mindmap-editor.js',
             array('wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-data', 'wp-dom-ready', 'wp-api-fetch'),
-            '1.0.1',
+            '1.0.2',
             true
         );
     }

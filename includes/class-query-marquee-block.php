@@ -13,6 +13,7 @@ class Elegant_Query_Marquee_Block {
         register_block_type('elegant/query-marquee', array(
             'title'           => 'Query 跑马灯卡片',
             'description'     => '基于 Query Loop 的横向无限滚动卡片容器。',
+            'category'        => 'sducraft-utils',
             'attributes'      => array(
                 'speed' => array(
                     'type'    => 'number',
@@ -72,7 +73,7 @@ class Elegant_Query_Marquee_Block {
             'elegant-query-marquee-editor',
             ELEGANT_TOOLKIT_URL . 'assets/query-marquee-editor.js',
             array('wp-blocks', 'wp-element', 'wp-data', 'wp-block-editor', 'wp-components', 'wp-dom-ready'),
-            '1.0.0',
+            '1.0.1',
             true
         );
     }

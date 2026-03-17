@@ -134,7 +134,7 @@ wp.domReady(function() {
     wp.blocks.registerBlockType('elegant/game-meta', {
         title: '整合包信息',
         icon: 'id-alt',
-        category: 'widgets',
+        category: 'sducraft-utils',
         description: '整合包信息（标题、版本、作者、简介）',
         attributes: {
             title: { type: 'string', default: '' },
@@ -201,7 +201,7 @@ wp.domReady(function() {
     wp.blocks.registerBlockType('elegant/post-game-meta', {
         title: '文章整合包信息',
         icon: 'media-document',
-        category: 'theme',
+        category: 'sducraft-utils',
         description: '自动读取当前文章的首个整合包信息区块并显示。',
         usesContext: ['postId', 'postType'],
         keywords: ['query', 'post', 'gamemeta', '整合包信息'],

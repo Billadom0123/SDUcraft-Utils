@@ -10,6 +10,7 @@ wp.domReady(function() {
     wp.blocks.registerBlockType('elegant/tab', {
         title: '单个标签页',
         icon: 'welcome-add-page',
+        category: 'sducraft-utils',
         description: '标签页组中的单个内容面板。',
         attributes: { title: { type: 'string', default: '新标签页' } },
         edit: function(props) {
@@ -32,7 +33,7 @@ wp.domReady(function() {
     wp.blocks.registerBlockType('elegant/tabs', {
         title: '标签页组',
         icon: 'index-card',
-        category: 'design',
+        category: 'sducraft-utils',
         description: '拥有可切换的多个标签页。',
         keywords: ['tabs', '选项卡', '标签'],
         example: {

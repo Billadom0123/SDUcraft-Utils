@@ -10,7 +10,7 @@ wp.domReady(function() {
     wp.blocks.registerBlockType('elegant/mindmap', {
         title: '思维导图区块',
         icon: 'share-alt2',
-        category: 'design',
+        category: 'sducraft-utils',
         description: '通过列表结构创建思维导图，支持多层级分支。',
         keywords: ['mindmap', '思维导图', 'list'],
         example: {

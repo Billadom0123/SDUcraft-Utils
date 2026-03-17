@@ -15,6 +15,7 @@ class Elegant_Game_Meta_Block {
         register_block_type('elegant/game-meta', array(
             'title'           => '整合包信息',
             'description'     => '整合包信息：标题、版本、作者、简介。',
+            'category'        => 'sducraft-utils',
             'attributes'      => array(
                 'title'   => array('type' => 'string', 'default' => ''),
                 'version' => array('type' => 'string', 'default' => ''),
@@ -27,6 +28,7 @@ class Elegant_Game_Meta_Block {
         register_block_type('elegant/post-game-meta', array(
             'title'           => '文章整合包信息',
             'description'     => '自动读取当前文章中的整合包信息区块并显示。',
+            'category'        => 'sducraft-utils',
             'attributes'      => array(
                 'field' => array('type' => 'string', 'default' => 'all'),
                 'fields' => array(
@@ -45,7 +47,7 @@ class Elegant_Game_Meta_Block {
             'elegant-game-meta-editor',
             ELEGANT_TOOLKIT_URL . 'assets/game-meta-editor.js',
             array('wp-blocks', 'wp-element', 'wp-data', 'wp-block-editor', 'wp-components', 'wp-dom-ready'),
-            '1.4.6',
+            '1.4.7',
             true
         );
     }

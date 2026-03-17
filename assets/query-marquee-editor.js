@@ -14,7 +14,7 @@ wp.domReady(function() {
     wp.blocks.registerBlockType('elegant/query-marquee', {
         title: 'Query 跑马灯卡片',
         icon: 'images-alt2',
-        category: 'design',
+        category: 'sducraft-utils',
         description: '基于 Query Loop 的横向无限滚动卡片容器。',
         keywords: ['query', 'loop', 'marquee', '跑马灯'],
         attributes: {

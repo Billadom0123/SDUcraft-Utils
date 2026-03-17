@@ -13,6 +13,7 @@ class Elegant_Tabs_Block {
         register_block_type('elegant/tab', array(
             'title'      => '标签页项目',
             'description'=> '标签页组中的单个内容面板。',
+            'category'   => 'sducraft-utils',
             'parent'     => array('elegant/tabs'),
             'attributes' => array(
                 'title' => array('type' => 'string', 'default' => '新标签页')
@@ -22,6 +23,7 @@ class Elegant_Tabs_Block {
         register_block_type('elegant/tabs', array(
             'title'           => '标签页组',
             'description'     => '拥有可切换的多个标签页',
+            'category'        => 'sducraft-utils',
             'render_callback' => array($this, 'render_callback'),
         ));
     }
@@ -31,7 +33,7 @@ class Elegant_Tabs_Block {
             'elegant-tabs-editor',
             ELEGANT_TOOLKIT_URL . 'assets/tabs-editor.js',
             array('wp-blocks', 'wp-element', 'wp-data', 'wp-editor', 'wp-components', 'wp-dom-ready', 'wp-block-editor'),
-            '1.0.14',
+            '1.0.15',
             true
         );
     }
