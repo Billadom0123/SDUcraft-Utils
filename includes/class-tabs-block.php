@@ -33,7 +33,7 @@ class Elegant_Tabs_Block {
             'elegant-tabs-editor',
             ELEGANT_TOOLKIT_URL . 'assets/tabs-editor.js',
             array('wp-blocks', 'wp-element', 'wp-data', 'wp-editor', 'wp-components', 'wp-dom-ready', 'wp-block-editor'),
-            '1.0.15',
+            '1.0.20',
             true
         );
     }

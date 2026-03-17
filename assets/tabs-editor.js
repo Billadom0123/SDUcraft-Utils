@@ -4,7 +4,6 @@
 wp.domReady(function() {
     var el = wp.element.createElement;
     var InnerBlocks = wp.blockEditor.InnerBlocks;
-    var TextControl = wp.components.TextControl;
 
     // 子区块：elegant/tab
     wp.blocks.registerBlockType('elegant/tab', {
@@ -14,16 +13,45 @@ wp.domReady(function() {
         description: '标签页组中的单个内容面板。',
         attributes: { title: { type: 'string', default: '新标签页' } },
         edit: function(props) {
+            var childBlocks = wp.data.useSelect(function(select) {
+                return select('core/block-editor').getBlocks(props.clientId);
+            }, [props.clientId]);
+
+            var onPassthroughMouseDown = function(event) {
+                if (!event || !event.target || typeof event.target.closest !== 'function') {
+                    return;
+                }
+
+                // Keep default insertion behavior when clicking the inner appender line/button.
+                if (event.target.closest('.block-list-appender, .block-editor-default-block-appender')) {
+                    return;
+                }
+
+                var blockNode = event.target.closest('[data-block]');
+                var targetClientId = blockNode ? blockNode.getAttribute('data-block') : '';
+
+                if (targetClientId && targetClientId !== props.clientId) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    wp.data.dispatch('core/block-editor').selectBlock(targetClientId);
+                    return;
+                }
+
+                if (targetClientId === props.clientId && childBlocks && childBlocks.length) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    wp.data.dispatch('core/block-editor').selectBlock(childBlocks[0].clientId);
+                }
+            };
+
             return el('div', { 
                 className: 'et-editor-tab-item', 
-                style: { padding: '15px', border: '1px solid #f0f0f0', background: '#fff' } 
+                style: { padding: '15px', border: '1px solid #f0f0f0', background: '#fff' },
+                onMouseDownCapture: onPassthroughMouseDown
             },
-                el(TextControl, { 
-                    label: '标签标题', 
-                    value: props.attributes.title, 
-                    onChange: function(v){ props.setAttributes({title:v}); } 
-                }),
-                el(InnerBlocks)
+                el(InnerBlocks, {
+                    renderAppender: InnerBlocks.DefaultBlockAppender
+                })
             );
         },
         save: function() { return el(InnerBlocks.Content); }
@@ -69,6 +97,9 @@ wp.domReady(function() {
             var dragState = wp.element.useState(-1);
             var draggingIndex = dragState[0];
             var setDraggingIndex = dragState[1];
+            var editState = wp.element.useState(-1);
+            var editingIndex = editState[0];
+            var setEditingIndex = editState[1];
             var tabNodeRefs = wp.element.useRef({});
             var pendingRectsRef = wp.element.useRef(null);
 
@@ -120,6 +151,18 @@ wp.domReady(function() {
                 }
 
                 setActiveIndex(toIndex);
+                setEditingIndex(-1);
+            };
+
+            var onRenameTab = function(index, title) {
+                if (!innerBlocks || !innerBlocks[index]) {
+                    return;
+                }
+
+                wp.data.dispatch('core/block-editor').updateBlockAttributes(
+                    innerBlocks[index].clientId,
+                    { title: title }
+                );
             };
 
             var onStartDragTab = function(index, event) {
@@ -129,7 +172,23 @@ wp.domReady(function() {
 
                 event.preventDefault();
                 event.stopPropagation();
+                setEditingIndex(-1);
                 setDraggingIndex(index);
+            };
+
+            var onStartEditTitle = function(index, event) {
+                if (!event) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (activeIndex !== index) {
+                    return;
+                }
+
+                setEditingIndex(index);
             };
 
             var onHoverDragTab = function(index, event) {
@@ -166,6 +225,12 @@ wp.domReady(function() {
                 } else if (activeIndex > index) {
                     setActiveIndex(activeIndex - 1);
                 }
+
+                if (editingIndex === index) {
+                    setEditingIndex(-1);
+                } else if (editingIndex > index) {
+                    setEditingIndex(editingIndex - 1);
+                }
             };
 
             wp.element.useEffect(function() {
@@ -178,7 +243,11 @@ wp.domReady(function() {
                 if (activeIndex > count - 1) {
                     setActiveIndex(count - 1);
                 }
-            }, [innerBlocks ? innerBlocks.length : 0, activeIndex]);
+
+                if (editingIndex > count - 1) {
+                    setEditingIndex(-1);
+                }
+            }, [innerBlocks ? innerBlocks.length : 0, activeIndex, editingIndex]);
 
             wp.element.useEffect(function() {
                 if (draggingIndex < 0) {
@@ -252,7 +321,10 @@ wp.domReady(function() {
                                     delete tabNodeRefs.current[block.clientId];
                                 }
                             },
-                            onClick: function() { setActiveIndex(index); },
+                            onClick: function() {
+                                setActiveIndex(index);
+                                setEditingIndex(-1);
+                            },
                             onMouseEnter: function(event) {
                                 onHoverDragTab(index, event);
                             },
@@ -283,7 +355,53 @@ wp.domReady(function() {
                                     },
                                     title: '按住并拖动以调整顺序'
                                 }, '⋮⋮'),
-                                el('span', null, block.attributes.title || '标签')
+                                (isActive && editingIndex === index) ? el('input', {
+                                    type: 'text',
+                                    value: block.attributes.title || '',
+                                    placeholder: '标签标题',
+                                    autoFocus: true,
+                                    onChange: function(event) {
+                                        onRenameTab(index, event.target.value);
+                                    },
+                                    onBlur: function() {
+                                        setEditingIndex(-1);
+                                    },
+                                    onKeyDown: function(event) {
+                                        if (event.key === 'Enter' || event.key === 'Escape') {
+                                            event.preventDefault();
+                                            setEditingIndex(-1);
+                                        }
+                                    },
+                                    onMouseDown: function(event) {
+                                        event.stopPropagation();
+                                    },
+                                    onClick: function(event) {
+                                        event.stopPropagation();
+                                    },
+                                    style: {
+                                        border: '1px solid #dcdcde',
+                                        borderRadius: '2px',
+                                        fontSize: '12px',
+                                        lineHeight: '20px',
+                                        padding: '2px 6px',
+                                        minWidth: '110px',
+                                        background: '#fff',
+                                        color: '#1e1e1e'
+                                    }
+                                }) : (isActive ? el('span', {
+                                    role: 'button',
+                                    title: '点击编辑标题',
+                                    onMouseDown: function(event) {
+                                        event.stopPropagation();
+                                    },
+                                    onClick: function(event) {
+                                        onStartEditTitle(index, event);
+                                    },
+                                    style: {
+                                        cursor: 'text',
+                                        padding: '2px 0'
+                                    }
+                                }, block.attributes.title || '标签') : el('span', null, block.attributes.title || '标签'))
                             ),
                             isActive ? el('span', {
                                 style: {
@@ -329,7 +447,7 @@ wp.domReady(function() {
                     el(InnerBlocks, { 
                         allowedBlocks: ['elegant/tab'],
                         template: [['elegant/tab', {title:'选项卡 1'}], ['elegant/tab', {title:'选项卡 2'}]],
-                            renderAppender: InnerBlocks.DefaultBlockAppender
+                            renderAppender: false
                     })
                 )
             );
